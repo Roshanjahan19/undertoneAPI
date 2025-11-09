@@ -10,11 +10,16 @@ app.use(cors());
 
 app.use(express.json());
 
+import usersRoute from "./src/routes/users.js";
+import routineRoutes from "./src/routes/routine.js";
 import recommendationsRoute from "./src/routes/recommendations.js";
+
+
 app.use("/recommendations", recommendationsRoute);
+app.use("/users", usersRoute);
+app.use("/routine", routineRoutes);
 
-
-const PORT = process.env.PORT || 5050;
+const PORT = process.env.PORT || 5051;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
