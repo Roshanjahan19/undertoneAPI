@@ -2,22 +2,34 @@ import pool from "../db/index.js";
 
 export const addWishlistItem = async (req, res) => {
   try {
-    const { user_id, product_name } = req.body;
+    const { user_id, product_id, product_name } = req.body;
 
-    if (!user_id || !product_name) {
-      return res.status(400).json({ error: "Missing fields" });
+    if (!user_id) {
+      return res.status(400).json({ error: "Missing user_id" });
     }
 
-    const result = await pool.query(
-      `
-      INSERT INTO wishlist (user_id, product_name)
-      VALUES ($1, $2)
-      RETURNING *
-      `,
-      [user_id, product_name]
-    );
+    if (product_id) {
+      const result = await pool.query(
+        `INSERT INTO wishlist (user_id, product_id)
+         VALUES ($1, $2)
+         RETURNING *`,
+        [user_id, product_id]
+      );
+      return res.json({ success: true, item: result.rows[0] });
+    }
 
-    return res.json({ success: true, item: result.rows[0] });
+    if (product_name) {
+      const result = await pool.query(
+        `INSERT INTO wishlist (user_id, product_name)
+         VALUES ($1, $2)
+         RETURNING *`,
+        [user_id, product_name]
+      );
+      return res.json({ success: true, item: result.rows[0] });
+    }
+
+    return res.status(400).json({ error: "Missing product_id or product_name" });
+
   } catch (err) {
     console.error("addWishlistItem error:", err);
     res.status(500).json({ error: "Server error" });
@@ -29,23 +41,39 @@ export const getWishlist = async (req, res) => {
     const { user_id } = req.params;
 
     const result = await pool.query(
-      `SELECT * FROM wishlist WHERE user_id = $1 ORDER BY id DESC`,
+      `
+     SELECT 
+  w.id,
+  w.user_id,
+  w.product_name,        
+  p.name AS db_product_name,
+  p.brand,
+  p.shade_note AS shade,
+  p.image_url AS image_url,
+  p.product_url
+FROM wishlist w
+LEFT JOIN products p ON p.id = w.product_id
+WHERE w.user_id = $1
+ORDER BY w.id DESC
+      `,
       [user_id]
     );
 
-    return res.json(result.rows);
+    res.json(result.rows);
   } catch (err) {
     console.error("getWishlist error:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
 
+
 export const deleteWishlistItem = async (req, res) => {
   try {
     const { id } = req.params;
 
     await pool.query(`DELETE FROM wishlist WHERE id = $1`, [id]);
-    return res.json({ success: true });
+
+    res.json({ success: true });
   } catch (err) {
     console.error("deleteWishlistItem error:", err);
     res.status(500).json({ error: "Server error" });
