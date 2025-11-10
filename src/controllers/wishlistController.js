@@ -2,12 +2,13 @@ import pool from "../db/index.js";
 
 export const addWishlistItem = async (req, res) => {
   try {
-    const { user_id, product_id, product_name } = req.body;
+    const { user_id, product_id, product_name, brand, shade } = req.body;
 
     if (!user_id) {
       return res.status(400).json({ error: "Missing user_id" });
     }
 
+    
     if (product_id) {
       const result = await pool.query(
         `INSERT INTO wishlist (user_id, product_id)
@@ -18,12 +19,18 @@ export const addWishlistItem = async (req, res) => {
       return res.json({ success: true, item: result.rows[0] });
     }
 
+    
     if (product_name) {
       const result = await pool.query(
-        `INSERT INTO wishlist (user_id, product_name)
-         VALUES ($1, $2)
+        `INSERT INTO wishlist (user_id, product_name, brand, shade)
+         VALUES ($1, $2, $3, $4)
          RETURNING *`,
-        [user_id, product_name]
+        [
+          user_id,
+          product_name,
+          brand || null,   
+          shade || null    
+        ]
       );
       return res.json({ success: true, item: result.rows[0] });
     }
@@ -36,25 +43,29 @@ export const addWishlistItem = async (req, res) => {
   }
 };
 
+
 export const getWishlist = async (req, res) => {
   try {
     const { user_id } = req.params;
 
     const result = await pool.query(
       `
-     SELECT 
+    SELECT 
   w.id,
   w.user_id,
-  w.product_name,        
+  w.product_name,
+  w.brand AS custom_brand,
+  w.shade AS custom_shade,
   p.name AS db_product_name,
-  p.brand,
-  p.shade_note AS shade,
-  p.image_url AS image_url,
+  p.brand AS db_brand,
+  p.shade_note AS db_shade,
+  p.image_url,
   p.product_url
 FROM wishlist w
 LEFT JOIN products p ON p.id = w.product_id
 WHERE w.user_id = $1
-ORDER BY w.id DESC
+ORDER BY w.id DESC;
+
       `,
       [user_id]
     );
