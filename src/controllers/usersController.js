@@ -10,7 +10,6 @@ export const ensureUser = async (req, res) => {
 
     const normalizedEmail = email.toLowerCase();
 
-    // Try to insert user — if inserted, RETURNING gives us new row
     const insertResult = await pool.query(
       `
       INSERT INTO users (email)
@@ -24,13 +23,11 @@ export const ensureUser = async (req, res) => {
     let userId;
     let existed = false;
 
-    // ✅ If result has a row → new user created
     if (insertResult.rows.length > 0) {
       userId = insertResult.rows[0].id;
       existed = false;
     } 
     
-    // ✅ Otherwise: user already existed → fetch ID
     else {
       const existing = await pool.query(
         `SELECT id FROM users WHERE email = $1`,
@@ -50,5 +47,28 @@ export const ensureUser = async (req, res) => {
   } catch (err) {
     console.error("ensureUser error", err);
     return res.status(500).json({ error: "Server error" });
+  }
+};
+export const checkUser = async (req, res) => {
+  try {
+    const email = req.query.email;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email required" });
+    }
+
+    const result = await pool.query(
+      "SELECT id FROM users WHERE email = $1 LIMIT 1",
+      [email.toLowerCase()]
+    );
+
+    if (result.rows.length > 0) {
+      return res.json({ exists: true });
+    }
+
+    return res.json({ exists: false });
+  } catch (err) {
+    console.error("checkUser error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };
