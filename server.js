@@ -13,8 +13,10 @@ app.use(express.json());
 import usersRoute from "./src/routes/users.js";
 import routineRoutes from "./src/routes/routine.js";
 import recommendationsRoute from "./src/routes/recommendations.js";
+import wishlistRoutes from "./src/routes/wishlist.js";
 
 
+app.use("/wishlist", wishlistRoutes);
 app.use("/recommendations", recommendationsRoute);
 app.use("/users", usersRoute);
 app.use("/routine", routineRoutes);
